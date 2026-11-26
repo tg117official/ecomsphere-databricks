@@ -1,0 +1,17 @@
+# Deploy code and job definitions; table/volume setup happens during execution.
+bundle:
+  name: ecomsphere-session17
+include:
+  - resources/*.yml
+variables:
+  catalog:
+    description: Existing Unity Catalog catalog with create permissions
+  prefix:
+    description: Dedicated namespace prefix (choose a unique suffix on shared workspaces)
+    default: ecomsphere17_dev
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+targets:
+  dev:
+    default: true
+    mode: development

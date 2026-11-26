@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "category": "Schema & Structure",
+    "name": "Capture source metadata",
+    "entity": "All Bronze entities",
+    "task": "Separate records that have a non-empty source path, ingestion timestamp, and pipeline run ID from records that cannot be traced."
+  },
+  {
+    "id": 2,
+    "category": "Schema & Structure",
+    "name": "Reject malformed JSON",
+    "entity": "File-based product catalog",
+    "task": "Parse each raw payload in permissive mode. Keep readable records and route malformed payloads to the corrupt-record output with their source file."
+  },
+  {
+    "id": 3,
+    "category": "Schema & Structure",
+    "name": "Check required columns before processing",
+    "entity": "Customer datasets",
+    "task": "Compare each dataset's available columns with the required customer columns: customer_id, first_name, email, and status_code."
+  },
+  {
+    "id": 4,
+    "category": "Schema & Structure",
+    "name": "Detect unexpected attributes",
+    "entity": "File-based product catalog",
+    "task": "Allow rows with no rescued payload. Flag rows that contain unexpected attributes for schema review."
+  },
+  {
+    "id": 5,
+    "category": "Schema & Structure",
+    "name": "Validate datatype compatibility",
+    "entity": "Order items",
+    "task": "Safely cast quantity_raw to INT. A value is valid only when the cast succeeds and the original value is not blank."
+  },
+  {
+    "id": 6,
+    "category": "Schema & Structure",
+    "name": "Apply record-level schema conformance",
+    "entity": "Order headers",
+    "task": "Validate order_id, a parseable order timestamp, and a decimal grand total in the same rule. Report all rows that cannot conform."
+  },
+  {
+    "id": 7,
+    "category": "Completeness",
+    "name": "Validate mandatory customer fields",
+    "entity": "Customer",
+    "task": "Split complete customer records from records with one or more missing mandatory fields."
+  },
+  {
+    "id": 8,
+    "category": "Completeness",
+    "name": "Validate product and variant fields",
+    "entity": "Product catalog",
+    "task": "Identify complete variant records and quarantine records with missing identifiers or descriptions."
+  },
+  {
+    "id": 9,
+    "category": "Completeness",
+    "name": "Validate order header fields",
+    "entity": "Orders",
+    "task": "Treat blank identifiers and unparseable timestamps as incomplete. Keep only records with all four required values."
+  },
+  {
+    "id": 10,
+    "category": "Completeness",
+    "name": "Validate order item fields",
+    "entity": "Order items",
+    "task": "Check completeness only in this rule. Quantity range and amount range are validated separately later."
+  },
+  {
+    "id": 11,
+    "category": "Completeness",
+    "name": "Validate payment fields",
+    "entity": "Payments",
+    "task": "Keep payment attempts with all mandatory values. Quarantine incomplete attempts without guessing the missing business data."
+  },
+  {
+    "id": 12,
+    "category": "Completeness",
+    "name": "Validate review fields",
+    "entity": "Customer reviews",
+    "task": "Separate complete reviews from reviews with missing identifiers, rating, or timestamp."
+  },
+  {
+    "id": 13,
+    "category": "Standardization",
+    "name": "Derive a clean customer full name",
+    "entity": "Customer",
+    "task": "Trim both name parts, combine them with one space, and quarantine records that have no first name."
+  },
+  {
+    "id": 14,
+    "category": "Standardization",
+    "name": "Normalize and validate email addresses",
+    "entity": "Customer",
+    "task": "Trim and lowercase the email, then validate a practical email pattern. Keep repairable rows and quarantine values that still fail."
+  },
+  {
+    "id": 15,
+    "category": "Standardization",
+    "name": "Normalize Indian phone numbers",
+    "entity": "Customer",
+    "task": "Remove punctuation. Accept a 10-digit Indian number or a 12-digit value beginning with 91, and store it as +91 followed by 10 digits."
+  },
+  {
+    "id": 16,
+    "category": "Standardization",
+    "name": "Standardize city names with an alias map",
+    "entity": "Customer addresses",
+    "task": "Normalize the raw text, join it to the city alias reference, and quarantine non-empty values that are not mapped."
+  },
+  {
+    "id": 17,
+    "category": "Standardization",
+    "name": "Standardize country codes",
+    "entity": "Addresses and warehouses",
+    "task": "Map each raw country value through the approved country alias table. Do not invent a code for an unknown value."
+  },
+  {
+    "id": 18,
+    "category": "Standardization",
+    "name": "Normalize status codes through a lookup",
+    "entity": "Orders",
+    "task": "Trim and uppercase the order status, then verify it against the approved order_status lookup."
+  },
+  {
+    "id": 19,
+    "category": "Standardization",
+    "name": "Normalize timestamps to UTC",
+    "entity": "Cross-source events",
+    "task": "Parse the local timestamp and convert it to UTC using the supplied IANA timezone. Quarantine unparseable values."
+  },
+  {
+    "id": 20,
+    "category": "Deduplication",
+    "name": "Remove exact duplicate customers",
+    "entity": "Customer",
+    "task": "For rows identical across the chosen business columns, keep the first occurrence and classify later occurrences as duplicates."
+  },
+  {
+    "id": 21,
+    "category": "Deduplication",
+    "name": "Keep the latest version of a mutable entity",
+    "entity": "Customer",
+    "task": "Partition by customer_id, order by business updated_at and then ingestion timestamp, and keep row number 1."
+  },
+  {
+    "id": 22,
+    "category": "Deduplication",
+    "name": "Detect duplicate reviews",
+    "entity": "Customer reviews",
+    "task": "Keep the latest record for each review_id using review timestamp and ingestion timestamp. Mark older copies as duplicates."
+  },
+  {
+    "id": 23,
+    "category": "Deduplication",
+    "name": "Detect duplicate order events",
+    "entity": "Order event log",
+    "task": "Use event_id as the idempotency key. Keep the earliest accepted copy and classify later copies as duplicates."
+  },
+  {
+    "id": 24,
+    "category": "Deduplication",
+    "name": "Keep the latest seller listing",
+    "entity": "File-based product catalog",
+    "task": "Partition by product_variant_id and seller_id, then keep the latest record by listing_updated_at and ingestion timestamp."
+  },
+  {
+    "id": 25,
+    "category": "Referential Integrity",
+    "name": "Validate order-to-customer references",
+    "entity": "Orders and customers",
+    "task": "Use the customer business key to split orders into matched and orphaned records."
+  },
+  {
+    "id": 26,
+    "category": "Referential Integrity",
+    "name": "Validate order item-to-order references",
+    "entity": "Order items and orders",
+    "task": "Use order_id to separate items with a parent order from orphaned items."
+  },
+  {
+    "id": 27,
+    "category": "Referential Integrity",
+    "name": "Validate item-to-variant references",
+    "entity": "Order items and product variants",
+    "task": "Match each product_variant_id against the product_variant master and quarantine unknown variants."
+  },
+  {
+    "id": 28,
+    "category": "Referential Integrity",
+    "name": "Validate payment-to-order references",
+    "entity": "Payments and orders",
+    "task": "Match payment order_id values to the order header and route unmatched attempts to quarantine."
+  },
+  {
+    "id": 29,
+    "category": "Referential Integrity",
+    "name": "Validate shipment-to-order references",
+    "entity": "Shipments and orders",
+    "task": "Match shipment order_id values to the order header and quarantine unmatched shipments."
+  },
+  {
+    "id": 30,
+    "category": "Referential Integrity",
+    "name": "Validate inventory-to-variant references",
+    "entity": "Inventory and product variants",
+    "task": "Match inventory product_variant_id values to the variant master and quarantine orphan stock rows."
+  },
+  {
+    "id": 31,
+    "category": "Referential Integrity",
+    "name": "Cross-reference file catalog listings",
+    "entity": "Catalog feed and product master",
+    "task": "Match each listing to product_variant. Keep matched records and quarantine listings that cannot be resolved."
+  },
+  {
+    "id": 32,
+    "category": "Domain & Range",
+    "name": "Validate quantity rules by context",
+    "entity": "Orders and inventory",
+    "task": "Apply the correct threshold using quantity_type instead of using one generic condition for every quantity column."
+  },
+  {
+    "id": 33,
+    "category": "Domain & Range",
+    "name": "Validate monetary amounts",
+    "entity": "Orders, items, payments, and adjustments",
+    "task": "Cast the amount to DECIMAL and accept negative values only when allows_negative is true."
+  },
+  {
+    "id": 34,
+    "category": "Domain & Range",
+    "name": "Validate review rating range",
+    "entity": "Customer reviews",
+    "task": "Safely cast the rating to INT and accept only values from 1 through 5 inclusive."
+  },
+  {
+    "id": 35,
+    "category": "Domain & Range",
+    "name": "Validate inventory consistency",
+    "entity": "Inventory levels",
+    "task": "Cast both quantities to integers and accept only rows where on_hand_qty >= 0 and 0 <= reserved_qty <= on_hand_qty."
+  },
+  {
+    "id": 36,
+    "category": "Domain & Range",
+    "name": "Reconcile order grand totals",
+    "entity": "Orders",
+    "task": "Calculate expected_grand_total with DECIMAL values and accept rows whose absolute difference is at most 0.01."
+  },
+  {
+    "id": 37,
+    "category": "Enrichment",
+    "name": "Derive available inventory",
+    "entity": "Inventory levels",
+    "task": "Validate the source quantities first, then derive available_qty = on_hand_qty - reserved_qty. Invalid source combinations must not produce trusted availability."
+  },
+  {
+    "id": 38,
+    "category": "Enrichment",
+    "name": "Derive verified-purchase review status",
+    "entity": "Reviews and order history",
+    "task": "Build a distinct purchase key from order history, enrich each complete review with is_verified_purchase, and quarantine reviews missing their matching keys."
+  },
+  {
+    "id": 39,
+    "category": "Enrichment",
+    "name": "Enrich the product master from seller listings",
+    "entity": "Products, variants, and catalog feed",
+    "task": "Join the latest matched listing to the product variant. Keep one enriched row per listing and quarantine catalog rows without a master variant."
+  },
+  {
+    "id": 40,
+    "category": "Enrichment",
+    "name": "Build an order-line view without multiplying rows",
+    "entity": "Orders, items, payments, and shipments",
+    "task": "Aggregate payment context to one row per order and shipment context to one row per order item before joining. Preserve one final row per order_item_id."
+  },
+  {
+    "id": 41,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate controlled lookup codes",
+    "entity": "Lookup-driven business fields",
+    "task": "Normalize code_raw, then match both lookup_type and code so that a value approved for one domain is not accidentally accepted in another."
+  },
+  {
+    "id": 42,
+    "category": "Extended E-commerce Checks",
+    "name": "Allow only one default address per customer",
+    "entity": "Customer addresses",
+    "task": "Within each customer, count rows marked as default. Keep all rows for customers with zero or one default; flag the competing default rows when the count is greater than one."
+  },
+  {
+    "id": 43,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate the category hierarchy",
+    "entity": "Product categories",
+    "task": "Accept root categories with no parent and child categories with a different, existing parent. Quarantine self-references and orphan parents."
+  },
+  {
+    "id": 44,
+    "category": "Extended E-commerce Checks",
+    "name": "Enforce unique product variant SKUs",
+    "entity": "Product variants",
+    "task": "Trim and uppercase the SKU. Keep non-empty SKUs that occur once, and flag every row involved in a duplicate."
+  },
+  {
+    "id": 45,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate promotion definitions",
+    "entity": "Promotions",
+    "task": "Validate the start and end dates, discount type, discount value, and non-negative maximum discount before publishing the promotion."
+  },
+  {
+    "id": 46,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate promotion eligibility on an order",
+    "entity": "Orders and order promotions",
+    "task": "Join each order_promotion record to its order and promotion, then evaluate all three eligibility conditions."
+  },
+  {
+    "id": 47,
+    "category": "Extended E-commerce Checks",
+    "name": "Reconcile successful payments to the order total",
+    "entity": "Payments and orders",
+    "task": "Aggregate SUCCESS payments by order_id, treat missing success as zero, and accept a difference of at most 0.01."
+  },
+  {
+    "id": 48,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate refund exposure and lifecycle",
+    "entity": "Refunds and orders",
+    "task": "Exclude REJECTED refunds from financial exposure, total the remaining refunds per order, and validate the lifecycle fields."
+  },
+  {
+    "id": 49,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate shipment tracking, carrier, and status",
+    "entity": "Shipments",
+    "task": "Normalize tracking numbers, flag duplicates, and validate carrier/status values against their lookup tables."
+  },
+  {
+    "id": 50,
+    "category": "Extended E-commerce Checks",
+    "name": "Validate shipment-item allocation",
+    "entity": "Shipment items",
+    "task": "Join allocations to shipment and order-item headers, total allocated quantity per order item, and classify mismatched or over-allocated rows."
+  }
+]
