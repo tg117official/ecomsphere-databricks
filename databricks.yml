@@ -1,6 +1,7 @@
 # Deploy code and job definitions; table/volume setup happens during execution.
 bundle:
   name: ecomsphere-session17
+  engine: direct
 include:
   - resources/*.yml
 variables:

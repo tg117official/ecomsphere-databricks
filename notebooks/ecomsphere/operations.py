@@ -64,7 +64,7 @@ def record_failure(c):
     # Keep the audit status honest if the watermark committed but subsequent logging failed.
     c.sql(f"""MERGE INTO {a} t USING (SELECT {c.run} pipeline_run_id) s ON t.pipeline_run_id=s.pipeline_run_id
       WHEN MATCHED THEN UPDATE SET status='{status}',end_time=current_timestamp(),error_message='Inspect failed task output in Jobs UI'
-      WHEN NOT MATCHED THEN INSERT VALUES(s.pipeline_run_id,{c.batch},current_timestamp(),current_timestamp(),'{status}',NULL,NULL,NULL,'Inspect failed task output in Jobs UI')""")
+      WHEN NOT MATCHED THEN INSERT (pipeline_run_id,batch,start_time,end_time,status,trusted_lines,revenue,rejects,error_message) VALUES(s.pipeline_run_id,{c.batch},current_timestamp(),current_timestamp(),'{status}',NULL,NULL,NULL,'Inspect failed task output in Jobs UI')""")
     if c.exists('meta','load_control'):
         c.sql(f"UPDATE {lc} SET status='{status}' WHERE pipeline_run_id={c.run}")
 

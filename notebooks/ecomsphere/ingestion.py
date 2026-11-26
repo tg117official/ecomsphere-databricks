@@ -32,7 +32,7 @@ def ingest_relational(c, row):
     c.sql(f"""MERGE INTO {lc} t USING (SELECT {c.run} pipeline_run_id,'{name}' dataset_name) s
       ON t.pipeline_run_id=s.pipeline_run_id AND t.dataset_name=s.dataset_name
       WHEN MATCHED THEN UPDATE SET load_end_ts=current_timestamp(),records_read={read},records_written=coalesce(t.records_written,0)+{written},status='STAGED'
-      WHEN NOT MATCHED THEN INSERT VALUES(s.pipeline_run_id,s.dataset_name,current_timestamp(),current_timestamp(),'INCREMENTAL',{lower},{c.upper},{read},{written},'STAGED')""")
+      WHEN NOT MATCHED THEN INSERT (pipeline_run_id,dataset_name,load_start_ts,load_end_ts,load_mode,lower_watermark_ts,upper_watermark_ts,records_read,records_written,status) VALUES(s.pipeline_run_id,s.dataset_name,current_timestamp(),current_timestamp(),'INCREMENTAL',{lower},{c.upper},{read},{written},'STAGED')""")
     print(f'{name}: read={read}, appended={written}')
 
 

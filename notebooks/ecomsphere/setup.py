@@ -38,12 +38,12 @@ def setup(c):
     p, w = c.table('meta','pipeline_config'), c.table('meta','cdc_watermark')
     for name, (key, _) in SOURCES.items():
         c.sql(f"""MERGE INTO {p} t USING (SELECT '{name}' source_object) s ON t.source_object=s.source_object
-          WHEN NOT MATCHED THEN INSERT VALUES ('ecomsphere17','DELTA',s.source_object,concat('bronze_',s.source_object),'INCREMENTAL','{key}','updated_at',true,'sales',current_timestamp(),current_timestamp())""")
+          WHEN NOT MATCHED THEN INSERT (pipeline_name,source_type,source_object,target_object,load_type,business_key,sequence_column,is_active,schedule_group,created_ts,updated_ts) VALUES ('ecomsphere17','DELTA',s.source_object,concat('bronze_',s.source_object),'INCREMENTAL','{key}','updated_at',true,'sales',current_timestamp(),current_timestamp())""")
         c.sql(f"""MERGE INTO {w} t USING (SELECT '{name}' source_object) s ON t.source_object=s.source_object
-          WHEN NOT MATCHED THEN INSERT VALUES ('simulated_oltp',s.source_object,'updated_at',NULL,30,NULL,current_timestamp(),'READY',0,NULL)""")
+          WHEN NOT MATCHED THEN INSERT (source_system,source_object,watermark_column,last_watermark_ts_utc,overlap_minutes,last_successful_run_id,updated_ts,status,last_committed_batch,pending_batch) VALUES ('simulated_oltp',s.source_object,'updated_at',NULL,30,NULL,current_timestamp(),'READY',0,NULL)""")
     # File ingestion has its own checkpoint, not a relational watermark.
     c.sql(f"""MERGE INTO {p} t USING (SELECT 'order_event_log' source_object) s ON t.source_object=s.source_object
-       WHEN NOT MATCHED THEN INSERT VALUES ('ecomsphere17','JSON',s.source_object,'bronze_order_event_log','STREAM','event_id','event_timestamp',true,'sales',current_timestamp(),current_timestamp())""")
+       WHEN NOT MATCHED THEN INSERT (pipeline_name,source_type,source_object,target_object,load_type,business_key,sequence_column,is_active,schedule_group,created_ts,updated_ts) VALUES ('ecomsphere17','JSON',s.source_object,'bronze_order_event_log','STREAM','event_id','event_timestamp',true,'sales',current_timestamp(),current_timestamp())""")
     # Persist a pending-batch marker before any source or target changes. A failed batch must be repaired first.
     states = c.sql(f'SELECT DISTINCT last_committed_batch,pending_batch FROM {w}').collect()
     if len(states)!=1 or c.scalar(f'SELECT count(*) FROM {w}')!=len(SOURCES):
@@ -58,5 +58,5 @@ def setup(c):
     audit = c.table('governance','pipeline_run_audit')
     c.sql(f"""MERGE INTO {audit} t USING (SELECT {c.run} pipeline_run_id) s ON t.pipeline_run_id=s.pipeline_run_id
       WHEN MATCHED THEN UPDATE SET status='RUNNING',end_time=NULL,error_message=NULL
-      WHEN NOT MATCHED THEN INSERT VALUES (s.pipeline_run_id,{c.batch},current_timestamp(),NULL,'RUNNING',NULL,NULL,NULL,NULL)""")
+      WHEN NOT MATCHED THEN INSERT (pipeline_run_id,batch,start_time,end_time,status,trusted_lines,revenue,rejects,error_message) VALUES (s.pipeline_run_id,{c.batch},current_timestamp(),NULL,'RUNNING',NULL,NULL,NULL,NULL)""")
     print(f'Setup ready: batch={c.batch}, last committed={last}, pending={c.batch}')
